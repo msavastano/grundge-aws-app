@@ -18,3 +18,6 @@ password
 note
   pk *String  # userId
   sk **String # noteId
+
+region
+  us-east-1
