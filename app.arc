@@ -19,5 +19,5 @@ note
   pk *String  # userId
   sk **String # noteId
 
-region
-  us-east-1
+@aws
+region us-east-1
