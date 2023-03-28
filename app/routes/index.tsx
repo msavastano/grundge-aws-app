@@ -1,6 +1,26 @@
 import { Link } from "@remix-run/react";
+import type { LoaderArgs} from "@remix-run/server-runtime";
+import { json } from "@remix-run/server-runtime";
+import { getOneMag, getAllMags, getAllTags, getAllMagStories, getTagsByStory, getStoriesByTag } from "~/models/magazine.server";
 
 import { useOptionalUser } from "~/utils";
+
+export async function loader({ request }: LoaderArgs) {
+  const mag = await getOneMag('clfsb4quu0000syu6hfyxehhi');
+  const mags2 = await getAllMags();
+  const tags = await getAllTags();
+  const magStories = await getAllMagStories('clfplb95i000008l93n3p51ee')
+  const storiesByTag = await getTagsByStory('clfsb5yuu0001zeu64ux3bxni')
+  const tagsByStory = await getStoriesByTag('clfsb5yuj0000zeu67dto4u66')
+  console.log('One mag', mag);
+  console.log('All mags', mags2);
+  console.log('All tags', tags);
+  console.log('magStories', magStories);
+  console.log('storiesByTag', storiesByTag);
+  console.log('tagsByStory', tagsByStory);
+  // console.log('scan', await scan());
+  return json({});
+}
 
 export default function Index() {
   const user = useOptionalUser();

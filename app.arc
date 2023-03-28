@@ -22,13 +22,14 @@ note
 magstorytag      #MAG          #STORY               #STORYTAG
   pk *String   # mag#magId    mag#magId           #story#storyId
   sk **String  # meta#magId   story#storyId       #tag#tagId
+  type String
 
 @tables-indexes
 magstorytag
   sk *String
   pk **String
   projection all
-  name tagstories  
+  name tagstories
 
 magstorytag
   type *String
