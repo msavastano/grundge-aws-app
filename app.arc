@@ -20,7 +20,7 @@ note
   sk **String # noteId
 
 magstorytag      #MAG          #STORY               #STORYTAG
-  pk *String   # mag#magId    mag#magId           #story#storyId
+  pk *String   # mag#magId    mag#mag             #story#storyId
   sk **String  # meta#magId   story#storyId       #tag#tagId
   type String
 

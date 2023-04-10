@@ -1,19 +1,12 @@
 import type { ActionArgs, LoaderArgs } from "@remix-run/node";
-import {
-  json,
-  redirect,
-  unstable_composeUploadHandlers as composeUploadHandlers,
-  unstable_createMemoryUploadHandler as createMemoryUploadHandler,
-  unstable_parseMultipartFormData as parseMultipartFormData,
-} from "@remix-run/node";
+import { json, redirect } from "@remix-run/node";
 import { Form, useActionData, useLoaderData } from "@remix-run/react";
 import * as React from "react";
-import type { Story } from "~/models/magazine.server";
-import { getAllMags , createStoryST } from "~/models/magazine.server";
+import type { Story} from "~/models/magazine.server";
+import { getAllMags, getOneStory, updateStoryST } from "~/models/magazine.server";
 import { requireUser } from "~/session.server";
-import { uploadImage } from "~/models/utils.server";
 
-export async function loader({ request }: LoaderArgs) {
+export async function loader({ request, params }: LoaderArgs) {
   const email = (await requireUser(request)).email;
   if (process.env.ADMIN !== email) {
     const searchParams = new URLSearchParams([
@@ -21,18 +14,20 @@ export async function loader({ request }: LoaderArgs) {
     ]);
     throw redirect(`/login?${searchParams}`);
   }
+  const story = await getOneStory(params.storyId);
+
   const magazineItems = await getAllMags();
-  return json({ magazineItems });
+  return { story, magazineItems };
 }
 
-export async function action({ request }: ActionArgs) {
+export async function action({ request, params }: ActionArgs) {
   await requireUser(request);
   const clonedData = request.clone();
   const formDatas = await clonedData.formData();
+  const id = params.storyId || "";
   const { _action } = Object.fromEntries(formDatas);
-  let secure_url: string = "";
-  if (_action === "create") {
-    const pubDate =formDatas.get("pubDate");
+  if (_action === "update") {
+    const pubDate = formDatas.get("pubDate");
     const volume = formDatas.get("volume");
     const mag = formDatas.get("mag");
     const name = formDatas.get("name");
@@ -55,9 +50,7 @@ export async function action({ request }: ActionArgs) {
             author: null,
             words: null,
             excerpt: null,
-            imgCloud: null,
           },
-          uploadedImage: secure_url,
         },
         { status: 400 }
       );
@@ -76,9 +69,7 @@ export async function action({ request }: ActionArgs) {
             author: null,
             words: null,
             excerpt: null,
-            imgCloud: null,
           },
-          uploadedImage: secure_url,
         },
         { status: 400 }
       );
@@ -97,9 +88,7 @@ export async function action({ request }: ActionArgs) {
             author: null,
             words: null,
             excerpt: null,
-            imgCloud: null,
           },
-          uploadedImage: secure_url,
         },
         { status: 400 }
       );
@@ -118,9 +107,7 @@ export async function action({ request }: ActionArgs) {
             words: null,
             excerpt: null,
             volume: null,
-            imgCloud: null,
           },
-          uploadedImage: secure_url,
         },
         { status: 400 }
       );
@@ -139,9 +126,7 @@ export async function action({ request }: ActionArgs) {
             author: null,
             words: null,
             excerpt: null,
-            imgCloud: null,
           },
-          uploadedImage: secure_url,
         },
         { status: 400 }
       );
@@ -160,9 +145,7 @@ export async function action({ request }: ActionArgs) {
             author: "Author needed",
             words: null,
             excerpt: null,
-            imgCloud: null,
           },
-          uploadedImage: secure_url,
         },
         { status: 400 }
       );
@@ -181,9 +164,7 @@ export async function action({ request }: ActionArgs) {
             author: null,
             words: null,
             excerpt: "Excerpt needed",
-            imgCloud: null,
           },
-          uploadedImage: secure_url,
         },
         { status: 400 }
       );
@@ -202,89 +183,33 @@ export async function action({ request }: ActionArgs) {
             mag: null,
             author: null,
             excerpt: null,
-            imgCloud: null,
           },
-          uploadedImage: secure_url,
         },
         { status: 400 }
       );
     }
 
-    await createStoryST({
+    const story = await getOneStory(params.storyId);
+    await updateStoryST({
+      id,
       name,
       url,
       img,
       author,
       pubDate,
       volume,
-      mag,
+      mag: mag,
       excerpt,
       words,
-    } as Story);
-   
+      tags: story.tags
+    } as Story)
+
     return redirect(`/`);
   }
-  if (_action === "upload") {
-    const handlers = async ({
-      name,
-      data,
-    }: {
-      name: string;
-      data: AsyncIterable<Uint8Array>;
-    }) => {
-      if (name !== "imgCloud") {
-        return undefined;
-      }
-      const uploadedImage = await uploadImage(data);
-      secure_url = uploadedImage.secure_url;
-      return secure_url;
-    };
-    const uploadHandler = composeUploadHandlers(
-      handlers,
-      createMemoryUploadHandler()
-    );
-    const imgFormData = await parseMultipartFormData(request, uploadHandler);
-    const imgCloud = imgFormData.get("imgCloud");
-    if (typeof imgCloud !== "string" || imgCloud.length === 0) {
-      return json(
-        {
-          errors: {
-            imgCloud: "imgCloud needed",
-            name: null,
-            words: null,
-            pubDate: null,
-            url: null,
-            img: null,
-            volume: null,
-            mag: null,
-            author: null,
-            excerpt: null,
-          },
-          uploadedImage: secure_url,
-        },
-        { status: 400 }
-      );
-    }
-    return json({
-      uploadedImage: secure_url,
-      errors: {
-        imgCloud: null,
-        name: null,
-        words: null,
-        pubDate: null,
-        url: null,
-        img: null,
-        volume: null,
-        mag: null,
-        author: null,
-        excerpt: null,
-      },
-    });
-  }
-  return redirect("/");
+  return redirect(`/stories/${params.storyId}/edit`);
 }
 
-export default function NewStoryPage() {
+export default function EditStoryPage() {
   const data = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
 
@@ -297,7 +222,6 @@ export default function NewStoryPage() {
   const wordsRef = React.useRef<HTMLInputElement>(null);
   const excerptRef = React.useRef<HTMLInputElement & HTMLTextAreaElement>(null);
   const magRef = React.useRef<HTMLInputElement & HTMLSelectElement>(null);
-  const imgSourceRef = React.useRef<HTMLInputElement>(null);
 
   React.useEffect(() => {
     if (actionData?.errors?.name) {
@@ -318,14 +242,12 @@ export default function NewStoryPage() {
       wordsRef.current?.focus();
     } else if (actionData?.errors?.author) {
       authorRef.current?.focus();
-    } else if (actionData?.errors?.imgCloud) {
-      imgSourceRef.current?.focus();
     }
   }, [actionData]);
 
   return (
     <div>
-      <h3 className="text-lg">New Story</h3>
+      <h4 className="text-2xl">Edit Story</h4>
       <Form
         method="post"
         style={{
@@ -337,10 +259,10 @@ export default function NewStoryPage() {
       >
         <div>
           <input
-            type="text"
-            placeholder="Story Name"
+            defaultValue={data?.story?.name}
             className="input-bordered input m-2 w-full max-w-xs"
             name="name"
+            placeholder={"Story Name"}
             ref={nameRef}
             aria-invalid={actionData?.errors?.name ? true : undefined}
             aria-errormessage={
@@ -357,10 +279,10 @@ export default function NewStoryPage() {
 
         <div>
           <input
-            type="text"
-            placeholder="Date Published"
+            defaultValue={data?.story?.pubDate}
             className="input-bordered input m-2 w-full max-w-xs"
             name="pubDate"
+            placeholder={"Date Published"}
             ref={pubDateRef}
             aria-invalid={actionData?.errors?.pubDate ? true : undefined}
             aria-errormessage={
@@ -377,10 +299,10 @@ export default function NewStoryPage() {
 
         <div>
           <input
-            type="text"
-            placeholder="Author"
+            defaultValue={data?.story?.author}
             className="input-bordered input m-2 w-full max-w-xs"
             name="author"
+            placeholder={"Author"}
             ref={authorRef}
             aria-invalid={actionData?.errors?.author ? true : undefined}
             aria-errormessage={
@@ -397,10 +319,10 @@ export default function NewStoryPage() {
 
         <div>
           <input
-            type="text"
-            placeholder="Volume"
+            defaultValue={data?.story?.volume}
             className="input-bordered input m-2 w-full max-w-xs"
             name="volume"
+            placeholder={"Volume"}
             ref={volumeRef}
             aria-invalid={actionData?.errors?.volume ? true : undefined}
             aria-errormessage={
@@ -417,10 +339,10 @@ export default function NewStoryPage() {
 
         <div>
           <input
-            type="text"
-            placeholder="Word Count"
+            defaultValue={data?.story?.words}
             className="input-bordered input m-2 w-full max-w-xs"
             name="words"
+            placeholder={"Word Count"}
             ref={wordsRef}
             aria-invalid={actionData?.errors?.words ? true : undefined}
             aria-errormessage={
@@ -437,10 +359,10 @@ export default function NewStoryPage() {
 
         <div>
           <textarea
-            className="textarea-bordered textarea m-2"
-            placeholder="Excerpt"
+            defaultValue={data?.story?.excerpt}
+            className="input-bordered input m-2 w-full max-w-xs"
+            placeholder={"Excerpt"}
             ref={excerptRef}
-            cols={34}
             name="excerpt"
             aria-invalid={actionData?.errors?.excerpt ? true : undefined}
             aria-errormessage={
@@ -457,9 +379,9 @@ export default function NewStoryPage() {
 
         <div>
           <input
-            type="text"
-            placeholder="URL"
+            defaultValue={data?.story?.url}
             className="input-bordered input m-2 w-full max-w-xs"
+            placeholder={"URL"}
             name="url"
             ref={urlRef}
             aria-invalid={actionData?.errors?.url ? true : undefined}
@@ -477,10 +399,9 @@ export default function NewStoryPage() {
 
         <div>
           <input
-            type="text"
-            placeholder="Img URL"
+            defaultValue={data?.story?.img}
             className="input-bordered input m-2 w-full max-w-xs"
-            value={actionData?.uploadedImage}
+            placeholder={"Img URL"}
             name="img"
             ref={imgRef}
             aria-invalid={actionData?.errors?.img ? true : undefined}
@@ -498,9 +419,9 @@ export default function NewStoryPage() {
 
         <div>
           <select
-            name="mag"
+            defaultValue={data.story?.mag}
             className="input-bordered input m-2 w-full max-w-xs"
-            placeholder="magazine"
+            name="mag"
             ref={magRef}
             aria-invalid={actionData?.errors?.mag ? true : undefined}
             aria-errormessage={
@@ -508,11 +429,15 @@ export default function NewStoryPage() {
             }
           >
             {data.magazineItems.map((m) => {
-              return ( 
-                <option key={m.id} value={m.name}>
+              return (
+                <option
+                  key={m.id}
+                  value={m.name}
+                  defaultChecked={data.story?.mag === m.display}
+                >
                   {m.display}
                 </option>
-              )
+              );
             })}
           </select>
 
@@ -524,27 +449,8 @@ export default function NewStoryPage() {
         </div>
 
         <div className="text-left">
-          <button className="btn" type="submit" name="_action" value="create">
-            Save
-          </button>
-        </div>
-      </Form>
-      <h6>Upload an image</h6>
-      <Form method="post" encType="multipart/form-data" id="upload-form">
-        <div>
-          <input
-            ref={imgSourceRef}
-            id="imgCloud"
-            type="file"
-            name="imgCloud"
-            accept="image/*"
-            className="file-input file-input-bordered w-full max-w-xs"
-          />
-        </div>
-        <div>
-          <button className="btn" type="submit" name="_action" value="upload">
-            {" "}
-            Upload to Cloudinary{" "}
+          <button type="submit" name="_action" value="update" className="btn">
+            Update
           </button>
         </div>
       </Form>

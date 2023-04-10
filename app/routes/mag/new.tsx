@@ -1,4 +1,4 @@
-import type { ActionArgs, LoaderArgs } from "@remix-run/node";
+import type { ActionArgs } from "@remix-run/node";
 import {
   json,
   redirect,
@@ -6,12 +6,9 @@ import {
   unstable_createMemoryUploadHandler as createMemoryUploadHandler,
   unstable_parseMultipartFormData as parseMultipartFormData,
 } from "@remix-run/node";
-import { Form, useActionData, useLoaderData } from "@remix-run/react";
+import { Form, useActionData } from "@remix-run/react";
 import * as React from "react";
 import type { Magazine} from "~/models/magazine.server";
-import { getAllMagStories, getStoriesByTag, getTagsByStory, scan} from "~/models/magazine.server";
-import { getOneMag} from "~/models/magazine.server";
-import { getAllMags, getAllTags } from "~/models/magazine.server";
 import { createMagazineST } from "~/models/magazine.server";
 import { requireUser } from "~/session.server";
 import { useUser } from "~/utils";
@@ -104,7 +101,7 @@ export async function action({ request }: ActionArgs) {
       );
     }
 
-    const mag = await createMagazineST({
+    await createMagazineST({
       id: values.name,
       name: values.name,
       display: values.display,
@@ -112,7 +109,6 @@ export async function action({ request }: ActionArgs) {
       desc: values.desc,
       img: values.img,
     } as Magazine);
-    console.log('mag', mag);
 
     return redirect(`/`);
   }
@@ -169,34 +165,8 @@ export async function action({ request }: ActionArgs) {
   return redirect("/");
 }
 
-// export async function loader({ request }: LoaderArgs) {
-//   const email = (await requireUser(request)).email;
-//   if (process.env.ADMIN !== email) {
-//     const searchParams = new URLSearchParams([
-//       ["redirectTo", new URL(request.url).pathname],
-//     ]);
-//     throw redirect(`/login?${searchParams}`);
-//   }
-
-//   const mag = await getOneMag('clfsb4quu0000syu6hfyxehhi');
-//   const mags2 = await getAllMags();
-//   const tags = await getAllTags();
-//   const magStories = await getAllMagStories('clfplb95i000008l93n3p51ee')
-//   const storiesByTag = await getTagsByStory('clfsb5yuu0001zeu64ux3bxni')
-//   const tagsByStory = await getStoriesByTag('clfsb5yuj0000zeu67dto4u66')
-//   console.log('One mag', mag);
-//   console.log('All mags', mags2);
-//   console.log('All tags', tags);
-//   console.log('magStories', magStories);
-//   console.log('storiesByTag', storiesByTag);
-//   console.log('tagsByStory', tagsByStory);
-//   // console.log('scan', await scan());
-//   return json({});
-// }
-
 export default function NewMagazinePage() {
   const user = useUser();
-  const data = useLoaderData();
   const actionData = useActionData<typeof action>();
   const nameRef = React.useRef<HTMLInputElement>(null);
   const descRef = React.useRef<HTMLInputElement & HTMLTextAreaElement>(null);

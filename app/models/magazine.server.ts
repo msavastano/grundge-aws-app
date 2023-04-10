@@ -2,7 +2,7 @@ import arc from "@architect/functions";
 import cuid from "cuid";
 
 export type Magazine = {
-  id:  string;
+  id?: string;
   name: string;
   display: string;
   url: string;
@@ -17,12 +17,12 @@ export type StoryTag = {
 }
 
 export type Tag = {
-  id: string;
+  id?: string;
   tag: string;
 }
 
 export type Story = {
-  id:  ReturnType<typeof cuid>;
+  id: ReturnType<typeof cuid>;
   volume: string;
   name: string;
   img: string;
@@ -32,60 +32,29 @@ export type Story = {
   words: number;
   pubDate: string;
   mag: Magazine['name'];
+  tags: Array<string>;
 }
 
-// create functions for magstorytag table
 export async function createStoryTagST({
   tag,
   storyId,
 }: StoryTag): Promise<StoryTag> {
   // story#storyId
-  //  tag#tagId
+  //  tag#tag
   const db = await arc.tables();
   const id = cuid();
   const resultST = await db.magstorytag.put({
-    pk: `story#${storyId}`,
-    sk: `tag#${id}`,
+    pk: `tag#${tag}`,
+    sk: `story#${storyId}`,
     tag,
     type: 'tag',
+    id: id
   });
 
   return {
-    id:  id,
+    id: id,
     storyId: resultST.pk.replace(/^story#/, ''),
     tag
-  };
-}
-
-export async function createMagazineST({
-  name,
-  display,
-  url,
-  desc,
-  img,
-}: Magazine): Promise<Magazine> {
-  // pk # mag#magId 
-  // sk # meta#magId
-  const db = await arc.tables();
-  const id = cuid();
-  const result = await db.magstorytag.put({
-    pk: `mag#${id}`,
-    sk: `meta#${id}`,
-    name,
-    display,
-    url,
-    desc,
-    img,
-    id: id,
-    type: 'magazine',
-  });
-  return {
-    id:  id,
-    name: result.name,
-    display: result.display,
-    url: result.url,
-    desc: result.desc,
-    img: result.img,
   };
 }
 
@@ -118,9 +87,10 @@ export async function createStoryST({
     id: id,
     mag,
     type: 'story',
+    tags: []
   });
   return {
-    id:  id,
+    id: id,
     img: result.img,
     volume: result.volume,
     name: result.name,
@@ -130,6 +100,174 @@ export async function createStoryST({
     url: result.url,
     words: result.words,
     pubDate: result.pubDate,
+    tags: result.tags,
+  };
+}
+
+export async function createMagazineST({
+  name,
+  display,
+  url,
+  desc,
+  img,
+}: Magazine): Promise<Magazine> {
+  // pk # mag#magId 
+  // sk # meta#magId
+  const db = await arc.tables();
+  const id = cuid();
+  const result = await db.magstorytag.put({
+    pk: `mag#${name}`,
+    sk: `meta#${id}`,
+    name,
+    display,
+    url,
+    desc,
+    img,
+    id: id,
+    type: 'magazine',
+  });
+  return {
+    id: id,
+    name: result.name,
+    display: result.display,
+    url: result.url,
+    desc: result.desc,
+    img: result.img,
+  };
+}
+
+export async function deleteStory({
+  id,
+  mag
+}: { id: string, mag: string }) {
+  const db = await arc.tables();
+  await db.magstorytag.delete({
+    pk: `mag#${mag}`,
+    sk: `story#${id}`,
+  })
+}
+
+export async function deleteStoryTag({
+  storyId,
+  tag
+}: { storyId: string, tag: string }) {
+  const db = await arc.tables();
+  await db.magstorytag.delete({
+    pk: `tag#${tag}`,
+    sk: `story#${storyId}`,
+  })
+}
+
+export async function deleteMag({
+  id,
+  mag
+}: { id: string, mag: string }) {
+  const db = await arc.tables();
+  await db.magstorytag.delete({
+    pk: `mag#${mag}`,
+    sk: `meta#${id}`,
+  })
+}
+
+export async function updateStoryST({
+  id,
+  img,
+  volume,
+  name,
+  author,
+  excerpt,
+  url,
+  words,
+  pubDate,
+  mag,
+  tags,
+}: Story) {
+  const db = await arc.tables();
+  db.magstorytag.update({
+    Key: {
+      pk: `mag#${mag}`,
+      sk: `story#${id}`,
+    },
+    UpdateExpression: 'SET #id = :id, #img = :img, #volume = :volume, #name = :name, #author = :author, #excerpt = :excerpt, #url = :url, #words = :words, #pubDate = :pubDate, #mag = :mag, #tags = :tags',
+    ExpressionAttributeNames: {
+      '#id': 'id',
+      '#img': 'img',
+      '#volume': 'volume',
+      '#name': 'name',
+      '#author': 'author',
+      '#excerpt': 'excerpt',
+      '#url': 'url',
+      '#words': 'words',
+      '#pubDate': 'pubDate',
+      '#mag': 'mag',
+      '#tags': 'tags',
+    },
+    ExpressionAttributeValues: {
+      ':id': id,
+      ':img': img,
+      ':volume': volume,
+      ':name': name,
+      ':author': author,
+      ':excerpt': excerpt,
+      ':url': url,
+      ':words': words,
+      ':pubDate': pubDate,
+      ':mag': mag,
+      ':tags': tags,
+    },
+  });
+}
+
+export async function updateMagST({
+  id,
+  img,
+  desc,
+  name,
+  display,
+  url,
+}: Magazine) {
+  const db = await arc.tables();
+  db.magstorytag.update({
+    Key: {
+      pk: `mag#${name}`,
+      sk: `meta#${id}`,
+    },
+    UpdateExpression: 'SET #id = :id, #img = :img, #name = :name, #url = :url, #desc = :desc, #display = :display',
+    ExpressionAttributeNames: {
+      '#id': 'id',
+      '#img': 'img',
+      '#desc': 'desc',
+      '#name': 'name',
+      '#display': 'display',
+      '#url': 'url',
+    },
+    ExpressionAttributeValues: {
+      ':id': id,
+      ':img': img,
+      ':desc': desc,
+      ':name': name,
+      ':display': display,
+      ':url': url,
+    }
+  });
+}
+
+export async function createTagST({
+  tag,
+}: Tag): Promise<Tag> {
+  // pk tag#tag 
+  // sk meta#tagId
+  const db = await arc.tables();
+  const id = cuid();
+  const result = await db.magstorytag.put({
+    pk: `tag#${tag}`,
+    sk: `meta#${id}`,
+    tag,
+    type: 'tag',
+  });
+  return {
+    id: id,
+    tag: result.tag,
   };
 }
 
@@ -166,67 +304,10 @@ async function queryIndex(partitionKey: string, sortKeyPrefix: string) {
   return result.Items
 }
 
-
 async function scanIndex() {
   const data = await arc.tables()
   const result = await data['magstorytag'].scan({})
   return result.Items
-}
-
-async function queryTableWithUniqueAttribute(partitionKey: string, sortKeyPrefix: string, uniqueAttribute: string) {
-  const data = await arc.tables()
-  const result = await data['magstorytag'].query({
-    KeyConditionExpression: '#partitionKey = :partitionKey and begins_with(#sortKey, :sortKeyPrefix)',
-    ExpressionAttributeNames: {
-      '#partitionKey': 'pk',
-      '#sortKey': 'sk'
-    },
-    ExpressionAttributeValues: {
-      ':partitionKey': partitionKey,
-      ':sortKeyPrefix': sortKeyPrefix
-    }
-  })
-
-  const uniqueValues = new Set()
-  const uniqueItems = result.Items.filter(item => {
-    if (uniqueValues.has(item[uniqueAttribute])) {
-      return false
-    } else {
-      uniqueValues.add(item[uniqueAttribute])
-      return true
-    }
-  })
-
-  return uniqueItems
-}
-
-async function queryIndexWithUniqueAttribute(partitionKey: string, sortKeyPrefix: string, uniqueAttribute: string) {
-  const data = await arc.tables()
-
-  const result = await data['magstorytag'].query({
-    IndexName: 'tagstories',
-    KeyConditionExpression: '#partitionKey = :partitionKey and begins_with(#sortKey, :sortKeyPrefix)',
-    ExpressionAttributeNames: {
-      '#partitionKey': 'sk',
-      '#sortKey': 'pk'
-    },
-    ExpressionAttributeValues: {
-      ':partitionKey': partitionKey,
-      ':sortKeyPrefix': sortKeyPrefix
-    }
-  })
-
-  const uniqueValues = new Set()
-  const uniqueItems = result.Items.filter(item => {
-    if (uniqueValues.has(item[uniqueAttribute])) {
-      return false
-    } else {
-      uniqueValues.add(item[uniqueAttribute])
-      return true
-    }
-  })
-
-  return uniqueItems
 }
 
 async function queryAllByTypeUnique(partitionKey: string, uniqueAttribute: string) {
@@ -260,18 +341,28 @@ export async function getAllMags() {
   return mags;
 }
 
+export async function getAllStories() {
+  const stories = await queryAllByTypeUnique('story', 'sk')
+  return stories;
+}
+
 export async function getAllTags() {
-  const tags = await queryAllByTypeUnique('tag', 'sk')
+  const tags = await queryAllByTypeUnique('tag', 'tag')
   return tags;
 }
 
-export async function getOneMag(magId: string) {
-  const mag = await queryTable(`mag#${magId}`, 'meta#')
-  return mag;
+export async function getOneMag(magId: string | undefined) {
+  const mag = await queryTable(`mag#${magId}`, 'meta#') as unknown as Magazine[]
+  return mag[0];
 }
 
-export async function getAllMagStories(magId: string) {
-  const items = await queryTable(`mag#${magId}`, 'story#')
+export async function getOneStory(storyId: string | undefined): Promise<Story> {
+  const st = await queryIndex(`story#${storyId}`, 'mag#') as unknown as Story[];
+  return st[0];
+}
+
+export async function getAllMagStories(mag: string) {
+  const items = await queryTable(`mag#${mag}`, 'story#')
   return items;
 }
 
@@ -280,28 +371,63 @@ export async function scan() {
   return stories;
 }
 
-export async function getTagsByStory(tagId: string) {
-  const tags = await queryIndexWithUniqueAttribute(`tag#${tagId}`, 'story#', 'sk')
-  return tags;
-}
-
-export async function getStoriesByTag(storyId: string) {
-  const stories = await queryTableWithUniqueAttribute(`story#${storyId}`, 'tag#', 'pk')
+export async function getStoriesByTag(tagId: string | undefined) {
+  const stories = await queryTableWithUniqueAttribute(`tag#${tagId}`, 'story#', 'pk')
   return stories;
 }
 
-// export function getOneStory
+async function queryTableWithUniqueAttribute(partitionKey: string, sortKeyPrefix: string, uniqueAttribute: string) {
+  const data = await arc.tables()
+  const result = await data['magstorytag'].query({
+    KeyConditionExpression: '#partitionKey = :partitionKey and begins_with(#sortKey, :sortKeyPrefix)',
+    ExpressionAttributeNames: {
+      '#partitionKey': 'pk',
+      '#sortKey': 'sk'
+    },
+    ExpressionAttributeValues: {
+      ':partitionKey': partitionKey,
+      ':sortKeyPrefix': sortKeyPrefix
+    }
+  })
 
-// export function getOneMag *
-// export function getAllMags *
-// export function getAllMagStories *
-// export function getAllTags *
-// export function getTagsByStory *
-// export function getStoriesByTag *
+  const uniqueValues = new Set()
+  const uniqueItems = result.Items.filter(item => {
+    if (uniqueValues.has(item[uniqueAttribute])) {
+      return false
+    } else {
+      uniqueValues.add(item[uniqueAttribute])
+      return true
+    }
+  })
 
-// export function editStory
-// export function editMag
+  return uniqueItems
+}
 
-// export function removeTagFromStory
-// export function deleteMag
-// export function deleteStory
+export async function queryIndexWithUniqueAttribute(partitionKey: string, sortKeyPrefix: string, uniqueAttribute: string) {
+  const data = await arc.tables()
+
+  const result = await data['magstorytag'].query({
+    IndexName: 'tagstories',
+    KeyConditionExpression: '#partitionKey = :partitionKey and begins_with(#sortKey, :sortKeyPrefix)',
+    ExpressionAttributeNames: {
+      '#partitionKey': 'sk',
+      '#sortKey': 'pk'
+    },
+    ExpressionAttributeValues: {
+      ':partitionKey': partitionKey,
+      ':sortKeyPrefix': sortKeyPrefix
+    }
+  })
+
+  const uniqueValues = new Set()
+  const uniqueItems = result.Items.filter(item => {
+    if (uniqueValues.has(item[uniqueAttribute])) {
+      return false
+    } else {
+      uniqueValues.add(item[uniqueAttribute])
+      return true
+    }
+  })
+
+  return uniqueItems
+}

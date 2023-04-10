@@ -1,158 +1,79 @@
-import { Link } from "@remix-run/react";
 import type { LoaderArgs} from "@remix-run/server-runtime";
 import { json } from "@remix-run/server-runtime";
-import { getOneMag, getAllMags, getAllTags, getAllMagStories, getTagsByStory, getStoriesByTag } from "~/models/magazine.server";
-
-import { useOptionalUser } from "~/utils";
+import { useOutletContext } from "@remix-run/react";
 
 export async function loader({ request }: LoaderArgs) {
-  const mag = await getOneMag('clfsb4quu0000syu6hfyxehhi');
-  const mags2 = await getAllMags();
-  const tags = await getAllTags();
-  const magStories = await getAllMagStories('clfplb95i000008l93n3p51ee')
-  const storiesByTag = await getTagsByStory('clfsb5yuu0001zeu64ux3bxni')
-  const tagsByStory = await getStoriesByTag('clfsb5yuj0000zeu67dto4u66')
-  console.log('One mag', mag);
-  console.log('All mags', mags2);
-  console.log('All tags', tags);
-  console.log('magStories', magStories);
-  console.log('storiesByTag', storiesByTag);
-  console.log('tagsByStory', tagsByStory);
-  // console.log('scan', await scan());
   return json({});
 }
 
-export default function Index() {
-  const user = useOptionalUser();
+export default function HomePage() {
+  const [showMenu] = useOutletContext<Boolean[]>();
   return (
-    <main className="relative min-h-screen bg-white sm:flex sm:items-center sm:justify-center">
-      <div className="relative sm:pb-16 sm:pt-8">
-        <div className="mx-auto max-w-7xl sm:px-6 lg:px-8">
-          <div className="relative shadow-xl sm:overflow-hidden sm:rounded-2xl">
-            <div className="absolute inset-0">
-              <img
-                className="h-full w-full object-cover"
-                src="https://user-images.githubusercontent.com/1500684/158276318-61064670-06c3-43f3-86e3-d624785b8ff7.jpg"
-                alt="Nirvana playing on stage with Kurt's jagstang guitar"
-              />
-              <div className="absolute inset-0 bg-[color:rgba(255,56,56,0.5)] mix-blend-multiply" />
-            </div>
-            <div className="relative px-4 pt-16 pb-8 sm:px-6 sm:pt-24 sm:pb-14 lg:px-8 lg:pb-20 lg:pt-32">
-              <h1 className="text-center text-6xl font-extrabold tracking-tight sm:text-8xl lg:text-9xl">
-                <span className="block uppercase text-red-500 drop-shadow-md">
-                  Grunge Stack
-                </span>
-              </h1>
-              <p className="mx-auto mt-6 max-w-lg text-center text-xl text-white sm:max-w-3xl">
-                Check the README.md file for instructions on how to get this
-                project deployed.
-              </p>
-              <div className="mx-auto mt-10 max-w-sm sm:flex sm:max-w-none sm:justify-center">
-                {user ? (
-                  <Link
-                    to="/notes"
-                    className="flex items-center justify-center rounded-md border border-transparent bg-white px-4 py-3 text-base font-medium text-red-700 shadow-sm hover:bg-red-50 sm:px-8"
-                  >
-                    View Notes for {user.email}
-                  </Link>
-                ) : (
-                  <div className="space-y-4 sm:mx-auto sm:inline-grid sm:grid-cols-2 sm:gap-5 sm:space-y-0">
-                    <Link
-                      to="/join"
-                      className="flex items-center justify-center rounded-md border border-transparent bg-white px-4 py-3 text-base font-medium text-red-700 shadow-sm hover:bg-red-50 sm:px-8"
-                    >
-                      Sign up YOU!!!!
-                    </Link>
-                    <Link
-                      to="/login"
-                      className="flex items-center justify-center rounded-md bg-red-500 px-4 py-3 font-medium text-white hover:bg-red-600"
-                    >
-                      Log In
-                    </Link>
-                  </div>
-                )}
-              </div>
-              <a href="https://remix.run">
-                <img
-                  src="https://user-images.githubusercontent.com/1500684/158298926-e45dafff-3544-4b69-96d6-d3bcc33fc76a.svg"
-                  alt="Remix"
-                  className="mx-auto mt-16 w-full max-w-[12rem] md:max-w-[16rem]"
-                />
+    <div className="">
+      <main>
+        {showMenu ? (
+          <section
+            id="mobile-menu"
+            className="top-68 justify-content-center animate-open-menu absolute w-full origin-top flex-col text-5xl"
+          >
+            <nav
+              className="flex min-h-screen flex-col items-center py-8"
+              aria-label="mobile"
+            >
+              <a href="/" className="w-full py-6 text-center hover:opacity-90">
+                Home
               </a>
-            </div>
-          </div>
-        </div>
-
-        <div className="mx-auto max-w-7xl py-2 px-4 sm:px-6 lg:px-8">
-          <div className="mt-6 flex flex-wrap justify-center gap-8">
-            {[
-              {
-                src: "https://user-images.githubusercontent.com/1500684/157991167-651c8fc5-2f72-4afa-94d8-2520ecbc5ebc.svg",
-                alt: "AWS",
-                href: "https://aws.com",
-              },
-              {
-                src: "https://user-images.githubusercontent.com/1500684/157991935-26c0d587-b866-49f5-af34-8f04be1c9df2.svg",
-                alt: "DynamoDB",
-                href: "https://aws.amazon.com/dynamodb/",
-              },
-              {
-                src: "https://user-images.githubusercontent.com/1500684/157990874-31f015c3-2af7-4669-9d61-519e5ecfdea6.svg",
-                alt: "Architect",
-                href: "https://arc.codes",
-              },
-              {
-                src: "https://user-images.githubusercontent.com/1500684/157764276-a516a239-e377-4a20-b44a-0ac7b65c8c14.svg",
-                alt: "Tailwind",
-                href: "https://tailwindcss.com",
-              },
-              {
-                src: "https://user-images.githubusercontent.com/1500684/157764454-48ac8c71-a2a9-4b5e-b19c-edef8b8953d6.svg",
-                alt: "Cypress",
-                href: "https://www.cypress.io",
-              },
-              {
-                src: "https://user-images.githubusercontent.com/1500684/157772386-75444196-0604-4340-af28-53b236faa182.svg",
-                alt: "MSW",
-                href: "https://mswjs.io",
-              },
-              {
-                src: "https://user-images.githubusercontent.com/1500684/157772447-00fccdce-9d12-46a3-8bb4-fac612cdc949.svg",
-                alt: "Vitest",
-                href: "https://vitest.dev",
-              },
-              {
-                src: "https://user-images.githubusercontent.com/1500684/157772662-92b0dd3a-453f-4d18-b8be-9fa6efde52cf.png",
-                alt: "Testing Library",
-                href: "https://testing-library.com",
-              },
-              {
-                src: "https://user-images.githubusercontent.com/1500684/157772934-ce0a943d-e9d0-40f8-97f3-f464c0811643.svg",
-                alt: "Prettier",
-                href: "https://prettier.io",
-              },
-              {
-                src: "https://user-images.githubusercontent.com/1500684/157772990-3968ff7c-b551-4c55-a25c-046a32709a8e.svg",
-                alt: "ESLint",
-                href: "https://eslint.org",
-              },
-              {
-                src: "https://user-images.githubusercontent.com/1500684/157773063-20a0ed64-b9f8-4e0b-9d1e-0b65a3d4a6db.svg",
-                alt: "TypeScript",
-                href: "https://typescriptlang.org",
-              },
-            ].map((img) => (
               <a
-                key={img.href}
-                href={img.href}
-                className="flex h-16 w-32 justify-center p-1 grayscale transition hover:grayscale-0 focus:grayscale-0"
+                href="/tags"
+                className="w-full py-6 text-center hover:opacity-90"
               >
-                <img alt={img.alt} src={img.src} className="object-contain" />
+                Tags
               </a>
-            ))}
+              <a
+                href="/about"
+                className="w-full py-6 text-center hover:opacity-90"
+              >
+                About
+              </a>
+            </nav>
+          </section>
+        ) : (
+          <div>
+            <div
+              className="hero min-h-screen"
+              style={{
+                backgroundImage: `url("https://res.cloudinary.com/djmxtsbdq/image/upload/v1674047110/remix/pl_fefgbi.png")`,
+              }}
+            >
+              <div className="hero-overlay bg-opacity-50"></div>
+              <div className="hero-content text-center text-neutral-content">
+                <div className="max-w-3xl">
+                  <figure className="p-2">
+                    <blockquote className="relative rounded-3xl bg-transparent py-12 pl-14 pr-8">
+                      <h4 className="mb-3 text-left text-2xl font-bold text-white">
+                        speculative fiction
+                      </h4>
+                      <p
+                        className="text-1xl mt-2 text-left text-white before:absolute before:top-0 before:left-0 before:translate-x-2
+                  before:translate-y-2 before:transform before:font-serif before:text-9xl before:opacity-25 
+                  before:content-['\201C'] after:absolute after:-bottom-20 after:right-0
+                  after:-translate-x-2 after:-translate-y-2 after:transform after:font-serif after:text-9xl after:opacity-25 
+                  after:content-['\201D'] sm:text-3xl"
+                      >
+                        a broad literary genre encompassing any fiction with
+                        supernatural, fantastical, or futuristic elements
+                      </p>
+                    </blockquote>
+                    <figcaption className="mt-2 pr-2 text-right text-xl italic text-white sm:text-2xl">
+                      &#8212;Dictionary.com
+                    </figcaption>
+                  </figure>
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
-    </main>
+        )}
+      </main>
+    </div>
   );
 }
