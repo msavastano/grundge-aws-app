@@ -1,22 +1,32 @@
 import * as React from "react";
-import type { ChatCompletionResponseMessage } from 'openai';
-import { Configuration, OpenAIApi } from 'openai';
+import type { ChatCompletionResponseMessage } from "openai";
+import { Configuration, OpenAIApi } from "openai";
 import { useEffect, useState } from "react";
+import TypingText from "./TypingText";
 
-export function ChatGPT({ apikey, prompt, persona }: { apikey: string | undefined, prompt: string, persona: string }) {
+export function ChatGPT({
+  apikey,
+  prompt,
+  persona,
+}: {
+  apikey: string | undefined;
+  prompt: string;
+  persona: string;
+}) {
   const person = persona;
-  const initMessages: Array<ChatCompletionResponseMessage> =
-    [
-      {
-        role: 'system',
-        content: `Answer every question like you are ${person}`
-      }
-    ]
-  const [messages, setMessages] = useState<Array<ChatCompletionResponseMessage>>(initMessages)
-  const [chatMessages, setChatMessages] = useState<Array<ChatCompletionResponseMessage>>(initMessages)
+  const initMessages: Array<ChatCompletionResponseMessage> = [
+    {
+      role: "system",
+      content: `Answer every question like you are ${person}`,
+    },
+  ];
+  const [messages, setMessages] =
+    useState<Array<ChatCompletionResponseMessage>>(initMessages);
+  const [chatMessages, setChatMessages] =
+    useState<Array<ChatCompletionResponseMessage>>(initMessages);
 
   const configuration = new Configuration({
-    apiKey: apikey
+    apiKey: apikey,
   });
   const openai = new OpenAIApi(configuration);
 
@@ -24,40 +34,56 @@ export function ChatGPT({ apikey, prompt, persona }: { apikey: string | undefine
     return await openai.createChatCompletion({
       model: "gpt-3.5-turbo",
       temperature: 0.8,
-      messages: [
-        ...messages,
-        { role: 'user', content: prompt }
-      ],
+      messages: [...messages, { role: "user", content: prompt }],
     });
   }
 
   useEffect(() => {
     if (prompt) {
-      callGPT().then(r => {
+      callGPT().then((r) => {
         console.log(r.data);
         if (r.data.choices[0].message) {
-          setMessages([...messages, { role: 'user', content: prompt }, r.data.choices[0].message]);
-          setChatMessages([{ role: 'user', content: prompt }, r.data.choices[0].message, ...chatMessages]);
+          setMessages([
+            ...messages,
+            { role: "user", content: prompt },
+            r.data.choices[0].message,
+          ]);
+          setChatMessages([
+            { role: "user", content: prompt },
+            r.data.choices[0].message,
+            ...chatMessages,
+          ]);
         }
-      })
+      });
     }
   }, [prompt]);
 
   useEffect(() => {
-    setMessages(initMessages)
-    setChatMessages(initMessages)
+    setMessages(initMessages);
+    setChatMessages(initMessages);
   }, [persona]);
 
   return (
-
     <>
       {chatMessages.map((message) => {
         return (
-          <div className="border-4 border-white" key={message.content}>
-            <p className="text-lg text-slate-600">{message.role === 'system' || message.role === 'user' ? 'User:' : person}</p>
-            <p className="text-xl">{message.content}</p>
+          <div key={message.content}>
+            <p className="text-lg text-slate-600">
+              {message.role === "system" || message.role === "user"
+                ? "User"
+                : person}
+              :
+            </p>
+            {message.role === "system" || message.role === "user" ? (
+              <p className="text-xl">{message.content}</p>
+            ) : (
+              <>
+                <TypingText text={message.content} delay={50} />
+                <div className="divider"></div>
+              </>
+            )}
           </div>
-        )
+        );
       })}
     </>
   );
