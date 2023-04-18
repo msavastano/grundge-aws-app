@@ -16,6 +16,7 @@ export default function NoteIndexPage() {
   const [promptSend, setPromptSend] = useState("");
   const [persona, setPersona] = useState("");
   const [personaSend, setPersonaSend] = useState("");
+  const [completionLoading, setCompletionLoading] = useState(false);
 
   const handlePromptChange = (e: ChangeEvent<HTMLInputElement>) => {
     setPrompt(e.target.value);
@@ -24,7 +25,6 @@ export default function NoteIndexPage() {
 
   const handleSend = () => {
     setPromptSend(prompt);
-    setPrompt("");
   };
 
   const handlePersonaChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -33,33 +33,47 @@ export default function NoteIndexPage() {
   };
 
   const handlePersonaSet = () => {
-    setPersonaSend(persona);
+    if (!persona) {
+      setPersonaSend("a very helpful assistant");
+    } else {
+      setPersonaSend(persona);
+    }
     setPersona("");
   };
 
   return (
     <div className="m-10">
-      <p className="text-xl">
-        Refresh browser or set a persona to clear context
-      </p>
-      <div>
-        <div className="m-2 flex">
-          <input
-            value={persona}
-            onChange={handlePersonaChange}
-            id="persona"
-            name="persona"
-            type="text"
-            placeholder="ChatGPT Persona?"
-            className="input-bordered input-primary input mr-2"
-          />
-          <button className="btn-primary btn" onClick={handlePersonaSet}>
-            Set
-          </button>
+      <div className="hero min-h-fit bg-base-200">
+        <div className="hero-content text-center">
+          <div className="max-w-md">
+            <h1 className="text-5xl font-bold">ChatWith</h1>
+          </div>
         </div>
       </div>
+      <p className="text-xl mt-3">
+        Set a Persona and Chat (to clear context refresh browser or set another
+        persona)
+      </p>
+      <div className="m-4">
+        <input
+          value={persona}
+          onChange={handlePersonaChange}
+          id="persona"
+          name="persona"
+          type="text"
+          placeholder="a very helpful assistant"
+          className="input-bordered input-primary input m-2 w-1/3"
+        />
+        <button className="btn-primary btn" onClick={handlePersonaSet}>
+          Set
+        </button>
+      </div>
+
       {personaSend && (
-        <div>
+        <div className="m-4 p-4 border-gray-900 border-2 rounded-lg">
+          <p className="flex justify-center text-3xl">
+            Chat with {personaSend}
+          </p>
           <div className="m-2 flex justify-between">
             <input
               value={prompt}
@@ -67,8 +81,9 @@ export default function NoteIndexPage() {
               id="search"
               name="search"
               type="text"
-              placeholder="Chat"
+              placeholder="Prompt"
               className="input-bordered input-primary input mr-2 w-full"
+              disabled={completionLoading}
             />
             <button className="btn-primary btn" onClick={handleSend}>
               Send
@@ -78,6 +93,9 @@ export default function NoteIndexPage() {
             apikey={data.apikey}
             prompt={promptSend}
             persona={personaSend}
+            setPrompt={setPrompt}
+            completionLoading={completionLoading}
+            setCompletionLoading={setCompletionLoading}
           />
         </div>
       )}

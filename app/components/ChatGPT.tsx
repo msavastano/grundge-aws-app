@@ -8,10 +8,16 @@ export function ChatGPT({
   apikey,
   prompt,
   persona,
+  setPrompt,
+  completionLoading,
+  setCompletionLoading,
 }: {
   apikey: string | undefined;
   prompt: string;
   persona: string;
+  setPrompt: (value: React.SetStateAction<string>) => void
+  setCompletionLoading: (value: React.SetStateAction<boolean>) => void
+  completionLoading: boolean;
 }) {
   const person = persona;
   const initMessages: Array<ChatCompletionResponseMessage> = [
@@ -40,6 +46,7 @@ export function ChatGPT({
 
   useEffect(() => {
     if (prompt) {
+      setCompletionLoading(true);
       callGPT().then((r) => {
         console.log(r.data);
         if (r.data.choices[0].message) {
@@ -54,7 +61,9 @@ export function ChatGPT({
             ...chatMessages,
           ]);
         }
-      });
+      }).finally(() => { 
+        setPrompt('');
+        setCompletionLoading(false) });
     }
   }, [prompt]);
 
@@ -65,6 +74,9 @@ export function ChatGPT({
 
   return (
     <>
+      {completionLoading ? (
+        <progress className="progress w-56"></progress>
+      ) : null}
       {chatMessages.map((message) => {
         return (
           <div key={message.content}>
@@ -78,7 +90,7 @@ export function ChatGPT({
               <p className="text-xl">{message.content}</p>
             ) : (
               <>
-                <TypingText text={message.content} delay={50} />
+                <TypingText text={message.content} delay={20} />
                 <div className="divider"></div>
               </>
             )}
