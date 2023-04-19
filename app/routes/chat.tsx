@@ -19,18 +19,22 @@ export default function NoteIndexPage() {
   const [persona, setPersona] = useState("");
   const [personaSend, setPersonaSend] = useState("");
   const [completionLoading, setCompletionLoading] = useState(false);
-  const [image, setImage] = useState<ImagesResponse>()
-
+  const [image, setImage] = useState<ImagesResponse>();
+  const [isImage, setIsImage] = useState(false);
   const configuration = new Configuration({
     apiKey: data.apikey,
   });
+
+  const handleInputChange = () => {
+    setIsImage(!isImage);
+  };
 
   const openai = new OpenAIApi(configuration);
 
   async function callDallE() {
     return await openai.createImage({
       prompt: `Cartoonish characature of ${persona}`,
-      size: '256x256',
+      size: "256x256",
     });
   }
 
@@ -55,11 +59,12 @@ export default function NoteIndexPage() {
       setPersonaSend(persona);
     }
     setPersona("");
-    // if (persona.length > 0 && !image) {
-    //   callDallE().then((i) => {
-    //     setImage(i.data)
-    //   })
-    // }
+    setImage(undefined)
+    if (persona.length > 0 && isImage) {
+      callDallE().then((i) => {
+        setImage(i.data)
+      })
+    }
   };
 
   return (
@@ -71,7 +76,7 @@ export default function NoteIndexPage() {
           </div>
         </div>
       </div>
-      <p className="text-xl mt-3">
+      <p className="mt-3 text-xl">
         Set a Persona and Chat (to clear context refresh browser or set another
         persona)
       </p>
@@ -88,13 +93,30 @@ export default function NoteIndexPage() {
         <button className="btn-primary btn" onClick={handlePersonaSet}>
           Set
         </button>
+        <div className="flex flex-col">
+          <div className="form-control w-52">
+            <label className="label cursor-pointer">
+              <span className="label-text">Generate Image</span>
+              <input
+                type="checkbox"
+                className="toggle-primary toggle"
+                checked={isImage}
+                onChange={handleInputChange}
+              />
+            </label>
+          </div>
+        </div>
       </div>
 
       {personaSend && (
-        <div className="m-4 p-4 border-gray-900 border-2 rounded-lg">
-          {image &&
-            <img className="mx-auto w-32 border-gray-900 border-2 rounded-xl m-2" alt={persona} src={image?.data[0].url} />
-          }
+        <div className="m-4 rounded-lg border-2 border-gray-900 p-4">
+          {image && (
+            <img
+              className="m-2 mx-auto w-32 rounded-xl border-2 border-gray-900"
+              alt={persona}
+              src={image?.data[0].url}
+            />
+          )}
           <p className="flex justify-center text-3xl">
             Chat with {personaSend}
           </p>
