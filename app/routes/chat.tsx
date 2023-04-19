@@ -1,7 +1,9 @@
 import { useLoaderData } from "@remix-run/react";
 import type { LoaderArgs } from "@remix-run/server-runtime";
 import { json } from "@remix-run/server-runtime";
+import type { ImagesResponse } from "openai";
 import type { ChangeEvent } from "react";
+import { Configuration, OpenAIApi } from "openai";
 import { useState } from "react";
 import { ChatGPT } from "~/components/ChatGPT";
 
@@ -17,6 +19,20 @@ export default function NoteIndexPage() {
   const [persona, setPersona] = useState("");
   const [personaSend, setPersonaSend] = useState("");
   const [completionLoading, setCompletionLoading] = useState(false);
+  const [image, setImage] = useState<ImagesResponse>()
+
+  const configuration = new Configuration({
+    apiKey: data.apikey,
+  });
+
+  const openai = new OpenAIApi(configuration);
+
+  async function callDallE() {
+    return await openai.createImage({
+      prompt: `Cartoonish characature of ${persona}`,
+      size: '256x256',
+    });
+  }
 
   const handlePromptChange = (e: ChangeEvent<HTMLInputElement>) => {
     setPrompt(e.target.value);
@@ -39,6 +55,11 @@ export default function NoteIndexPage() {
       setPersonaSend(persona);
     }
     setPersona("");
+    // if (persona.length > 0 && !image) {
+    //   callDallE().then((i) => {
+    //     setImage(i.data)
+    //   })
+    // }
   };
 
   return (
@@ -71,6 +92,9 @@ export default function NoteIndexPage() {
 
       {personaSend && (
         <div className="m-4 p-4 border-gray-900 border-2 rounded-lg">
+          {image &&
+            <img className="mx-auto w-32 border-gray-900 border-2 rounded-xl m-2" alt={persona} src={image?.data[0].url} />
+          }
           <p className="flex justify-center text-3xl">
             Chat with {personaSend}
           </p>
